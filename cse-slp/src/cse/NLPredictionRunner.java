@@ -2,10 +2,8 @@ package cse;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -15,12 +13,8 @@ import slp.core.lexing.runners.LexerRunner;
 import slp.core.lexing.simple.WhitespaceLexer;
 import slp.core.modeling.Model;
 import slp.core.modeling.ngram.ADMModel;
-import slp.core.modeling.runners.ModelRunner;
 import slp.core.translating.Vocabulary;
 import slp.core.translating.VocabularyRunner;
-import slp.core.util.Pair;
-
-import cse.CompletionModelRunner;
 
 public class NLPredictionRunner {
     public static void main(String[] args) {
@@ -28,8 +22,6 @@ public class NLPredictionRunner {
 
         File train = new File(args[0]);
         File test = new File(args[1]);
-
-        // File test = args.length < 2 ? train : new File(args[1]);
 
         Lexer lexer = new WhitespaceLexer();
         LexerRunner lexerRunner = new LexerRunner(lexer, true);
@@ -43,12 +35,15 @@ public class NLPredictionRunner {
         CompletionModelRunner modelRunner = new CompletionModelRunner(model, lexerRunner, vocabulary);
         modelRunner.learnDirectory(train);
         modelRunner.setSelfTesting(false);
+        modelRunner.setCompletionCutOff(10);
 
         try {
             List<String> lines = Files.lines(Paths.get(args[1]))
                     .collect(Collectors.toList());
+            List<String> suggestions = Files.lines(Paths.get(args[2]))
+                    .collect(Collectors.toList());
 
-            modelRunner.predictLastContent(lines.get(1));
+            modelRunner.completeLastContentLines(lines, suggestions);
         } catch (IOException e) {
             e.printStackTrace();
         }
