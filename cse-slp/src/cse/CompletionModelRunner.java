@@ -14,7 +14,7 @@ import java.util.DoubleSummaryStatistics;
 
 final class CompletionModelRunner extends ModelRunner {
 
-    private static int COMPLETION_CUTOFF = 10;
+    static int COMPLETION_CUTOFF = 10;
 
     CompletionModelRunner(Model model, LexerRunner lexerRunner, Vocabulary vocabulary) {
         super(model, lexerRunner, vocabulary);
@@ -28,13 +28,12 @@ final class CompletionModelRunner extends ModelRunner {
         COMPLETION_CUTOFF = value;
     }
 
-    void completeLastContentLine(String content) {
+    void completeLastTokenLine(String content) {
         completeLastToken(this.lexerRunner.lexLine(content));
     }
 
-    List<Completion> completeLastContentLines(List<String> content, List<String> suggestions) {
+    List<Completion> completeLastTokenLines(List<String> content, List<String> suggestions) {
         List<Completion> rankingTmp = content.stream()
-                .limit(10)
                 .map(p -> completeLastToken(this.lexerRunner.lexLine(p)))
                 .collect(Collectors.toList());
 
