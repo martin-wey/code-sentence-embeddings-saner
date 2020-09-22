@@ -4,22 +4,17 @@ package cse;
 // https://github.com/SLP-team/SLP-Core/blob/master/src/main/java/slp/core/modeling/runners/Completion.java
 
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import slp.core.util.Pair;
 
 public class Completion {
     private final Integer realIx;
     private final List<Pair<Integer, Double>> completions;
-    private String suggestions;
+    private List<Integer> suggestions;
+    private List<Pair<Integer, Double>> filteredSuggestions;
 
-    public Completion(Integer realIx, List<Pair<Integer, Double>> predictions, String suggestions) {
-        this.realIx = realIx;
-        this.completions = predictions;
-        this.suggestions = suggestions;
-    }
-
-    public Completion(Integer realIx, List<Pair<Integer, Double>> predictions) {
+    Completion(Integer realIx, List<Pair<Integer, Double>> predictions) {
         this.realIx = realIx;
         this.completions = predictions;
     }
@@ -28,27 +23,54 @@ public class Completion {
         return realIx;
     }
 
-    public List<Pair<Integer, Double>> getPredictions() {
+    List<Pair<Integer, Double>> getCompletions() {
         return completions;
     }
 
-    public void setSuggestions(String suggestions) {
+    void setSuggestions(List<Integer> suggestions) {
         this.suggestions = suggestions;
     }
 
-    public String getSuggestions() {
+    public List<Integer> getSuggestions() {
         return suggestions;
     }
 
-    public int getRank() {
+    public void setFilteredSuggestions(List<Pair<Integer, Double>> suggestions) {
+        this.filteredSuggestions = suggestions;
+    }
+
+    List<Pair<Integer, Double>> getFilteredSuggestions() {
+        return filteredSuggestions;
+    }
+
+    void filterSuggestions(int maxSize) {
+        this.filteredSuggestions = completions.stream()
+                .filter(e -> this.suggestions.contains(e.left))
+                .limit(maxSize)
+                .collect(Collectors.toList());
+    }
+
+    int getRank() {
         if (this.realIx == null) return -1;
         else {
-            for (int i = 0; i < this.completions.size(); i++) {
-                if (this.completions.get(i).left.equals(this.realIx)) {
+            for (int i = 0; i < this.filteredSuggestions.size(); i++) {
+                if (this.filteredSuggestions.get(i).left.equals(this.realIx) && this.realIx != 0) {
                     return i;
                 }
             }
             return -1;
+        }
+    }
+
+    double getRecall() {
+        if (this.realIx == null) return 0;
+        else {
+            for (Pair<Integer, Double> suggestion : filteredSuggestions) {
+                if (suggestion.left.equals(this.realIx) && this.realIx != 0) {
+                    return 1;
+                }
+            }
+            return 0;
         }
     }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.DoubleSummaryStatistics;
 
 import slp.core.counting.giga.GigaCounter;
 import slp.core.lexing.Lexer;
@@ -35,7 +36,7 @@ public class NLPredictionRunner {
         CompletionModelRunner modelRunner = new CompletionModelRunner(model, lexerRunner, vocabulary);
         modelRunner.learnDirectory(train);
         modelRunner.setSelfTesting(false);
-        modelRunner.setCompletionCutOff(10);
+        modelRunner.setCompletionCutOff(100);
 
         try {
             List<String> lines = Files.lines(Paths.get(args[1]))
@@ -43,7 +44,11 @@ public class NLPredictionRunner {
             List<String> suggestions = Files.lines(Paths.get(args[2]))
                     .collect(Collectors.toList());
 
-            modelRunner.completeLastContentLines(lines, suggestions);
+            List<Completion> completions = modelRunner.completeLastContentLines(lines, suggestions);
+            DoubleSummaryStatistics statistics = modelRunner.getCompletionMRRs(completions);
+            System.out.printf("Modeled %d tokens, average MRR:\t%.4f\n", statistics.getCount(), statistics.getAverage());
+
+            completions.forEach(p -> System.out.println(p.getFilteredSuggestions()));
         } catch (IOException e) {
             e.printStackTrace();
         }

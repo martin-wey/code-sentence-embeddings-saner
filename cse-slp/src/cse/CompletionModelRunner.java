@@ -6,13 +6,15 @@ import slp.core.modeling.Model;
 import slp.core.translating.Vocabulary;
 import slp.core.util.Pair;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.DoubleSummaryStatistics;
 
 final class CompletionModelRunner extends ModelRunner {
+
+    public static int TMP_COMPLETION_CUTOFF = 100;
 
     CompletionModelRunner(Model model, LexerRunner lexerRunner, Vocabulary vocabulary) {
         super(model, lexerRunner, vocabulary);
@@ -26,7 +28,7 @@ final class CompletionModelRunner extends ModelRunner {
         completeLastToken(this.lexerRunner.lexLine(content));
     }
 
-    void completeLastContentLines(List<String> content, List<String> suggestions) {
+    List<Completion> completeLastContentLines(List<String> content, List<String> suggestions) {
         List<Completion> rankingTmp = content.stream()
                 .limit(10)
                 .map(p -> completeLastToken(this.lexerRunner.lexLine(p)))
@@ -36,12 +38,16 @@ final class CompletionModelRunner extends ModelRunner {
         List<Completion> rankings = IntStream.range(0, rankingTmp.size())
                 .mapToObj(i -> {
                     Completion ranking = rankingTmp.get(i);
-                    ranking.setSuggestions(suggestions.get(i));
+                    ranking.setSuggestions(
+                            this.vocabulary.toIndices(
+                                Arrays.asList(suggestions.get(i).split(" "))
+                            )
+                    );
                     return ranking;
                 }).collect(Collectors.toList());
+        rankings.forEach(p -> p.filterSuggestions(GLOBAL_PREDICTION_CUTOFF));
 
-        // compute stats and metrics
-        System.out.println(rankings.get(1).getSuggestions());
+        return rankings;
     }
 
     private Completion completeLastToken(Stream<String> lexed) {
@@ -54,9 +60,28 @@ final class CompletionModelRunner extends ModelRunner {
         List<Pair<Integer, Double>> completions = lastPred.entrySet().stream()
                 .map(e -> Pair.of(e.getKey(), toProb(e.getValue())))
                 .sorted((p1, p2) -> - Double.compare(p1.right, p2.right))
-                .limit(GLOBAL_PREDICTION_CUTOFF)
+                .limit(TMP_COMPLETION_CUTOFF)
                 .collect(Collectors.toList());
 
         return new Completion(tokens.get(tokens.size() - 2), completions);
+    }
+
+    public DoubleSummaryStatistics getCompletionMRR(List<Completion> completions) {
+        List<Double> MRRs = completions.stream()
+                .map(l -> toMRR(l.getRank()))
+                .collect(Collectors.toList());
+        return getFileStats(Stream.of(MRRs));
+    }
+
+    public DoubleSummaryStatistics getCompletionRecall(List<Completion> completions) {
+        List<Double> recalls = completions.stream()
+                .map(Completion::getRecall)
+                .collect(Collectors.toList());
+        return getFileStats(Stream.of(recalls));
+    }
+
+    private DoubleSummaryStatistics getFileStats(Stream<List<Double>> fileProbs) {
+        return fileProbs.flatMap(List::stream)
+                .mapToDouble(p -> p).summaryStatistics();
     }
 }
