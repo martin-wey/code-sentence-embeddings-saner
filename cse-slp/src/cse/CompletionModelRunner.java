@@ -14,14 +14,18 @@ import java.util.DoubleSummaryStatistics;
 
 final class CompletionModelRunner extends ModelRunner {
 
-    public static int TMP_COMPLETION_CUTOFF = 100;
+    private static int COMPLETION_CUTOFF = 10;
 
     CompletionModelRunner(Model model, LexerRunner lexerRunner, Vocabulary vocabulary) {
         super(model, lexerRunner, vocabulary);
     }
 
-    void setCompletionCutOff(int value) {
+    void setTmpCompletionCutOff(int value) {
         setPredictionCutoff(value);
+    }
+
+    void setCompletionCutoff(int value) {
+        COMPLETION_CUTOFF = value;
     }
 
     void completeLastContentLine(String content) {
@@ -45,7 +49,7 @@ final class CompletionModelRunner extends ModelRunner {
                     );
                     return ranking;
                 }).collect(Collectors.toList());
-        rankings.forEach(p -> p.filterSuggestions(GLOBAL_PREDICTION_CUTOFF));
+        rankings.forEach(p -> p.filterSuggestions(COMPLETION_CUTOFF));
 
         return rankings;
     }
@@ -60,13 +64,12 @@ final class CompletionModelRunner extends ModelRunner {
         List<Pair<Integer, Double>> completions = lastPred.entrySet().stream()
                 .map(e -> Pair.of(e.getKey(), toProb(e.getValue())))
                 .sorted((p1, p2) -> - Double.compare(p1.right, p2.right))
-                .limit(TMP_COMPLETION_CUTOFF)
                 .collect(Collectors.toList());
 
         return new Completion(tokens.get(tokens.size() - 2), completions);
     }
 
-    public DoubleSummaryStatistics getCompletionMRR(List<Completion> completions) {
+    DoubleSummaryStatistics getCompletionMRR(List<Completion> completions) {
         List<Double> MRRs = completions.stream()
                 .map(l -> toMRR(l.getRank()))
                 .collect(Collectors.toList());

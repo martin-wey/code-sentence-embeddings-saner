@@ -36,7 +36,7 @@ public class NLPredictionRunner {
         CompletionModelRunner modelRunner = new CompletionModelRunner(model, lexerRunner, vocabulary);
         modelRunner.learnDirectory(train);
         modelRunner.setSelfTesting(false);
-        modelRunner.setCompletionCutOff(100);
+        modelRunner.setTmpCompletionCutOff(1000);
 
         try {
             List<String> lines = Files.lines(Paths.get(args[1]))
@@ -45,34 +45,14 @@ public class NLPredictionRunner {
                     .collect(Collectors.toList());
 
             List<Completion> completions = modelRunner.completeLastContentLines(lines, suggestions);
-            DoubleSummaryStatistics statistics = modelRunner.getCompletionMRRs(completions);
-            System.out.printf("Modeled %d tokens, average MRR:\t%.4f\n", statistics.getCount(), statistics.getAverage());
+            DoubleSummaryStatistics mrrs = modelRunner.getCompletionMRR(completions);
+            System.out.printf("Evaluated %d samples, average MRR:\t%.4f\n", mrrs.getCount(), mrrs.getAverage());
 
-            completions.forEach(p -> System.out.println(p.getFilteredSuggestions()));
+            DoubleSummaryStatistics recalls = modelRunner.getCompletionRecall(completions);
+            System.out.printf("Evaluated %d samples, Recall@%d MRR:\t%.4f\n",
+                    recalls.getCount(), modelRunner.GLOBAL_PREDICTION_CUTOFF, recalls.getAverage());
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        /*
-        try {
-            List<String> lines = Files.lines(Paths.get(args[1]))
-                    .collect(Collectors.toList());
-
-            List<Stream<String>> linesLexed = lines.stream()
-                    .map(lexerRunner::lexLine)
-                    .collect(Collectors.toList());
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        Stream<Pair<File, List<List<Double>>>> modeledFiles = modelRunner.modelDirectory(test);
-        DoubleSummaryStatistics statistics = modelRunner.getStats(modeledFiles);
-        System.out.printf("Modeled %d tokens, average entropy:\t%.4f\n", statistics.getCount(), statistics.getAverage());
-
-        Stream<Pair<File, List<List<Double>>>> predictedFile = modelRunner.predict(test);
-        DoubleSummaryStatistics completionStats = modelRunner.getStats(predictedFile);
-        System.out.printf("Modeled %d tokens, average MRR:\t%.4f\n", completionStats.getCount(), completionStats.getAverage());
-         */
     }
 }

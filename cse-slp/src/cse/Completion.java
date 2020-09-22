@@ -46,7 +46,7 @@ public class Completion {
     void filterSuggestions(int maxSize) {
         this.filteredSuggestions = completions.stream()
                 .filter(e -> this.suggestions.contains(e.left))
-                .limit(maxSize)
+                .limit(10)
                 .collect(Collectors.toList());
     }
 
