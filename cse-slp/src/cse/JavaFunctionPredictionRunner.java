@@ -13,8 +13,9 @@ import slp.core.lexing.Lexer;
 import slp.core.lexing.runners.LexerRunner;
 import slp.core.lexing.simple.WhitespaceLexer;
 import slp.core.modeling.Model;
-import slp.core.modeling.ngram.ADMModel;
 import slp.core.modeling.ngram.JMModel;
+import slp.core.modeling.mix.MixModel;
+import slp.core.modeling.dynamic.CacheModel;
 import slp.core.translating.Vocabulary;
 import slp.core.translating.VocabularyRunner;
 
@@ -28,11 +29,14 @@ public class JavaFunctionPredictionRunner {
         LexerRunner lexerRunner = new LexerRunner(lexer, true);
         lexerRunner.setSentenceMarkers(true);
 
-        VocabularyRunner.cutOff(10);
+        VocabularyRunner.cutOff(20);
         Vocabulary vocabulary = VocabularyRunner.build(lexerRunner, train);
         vocabulary.close();
 
-        Model model = new JMModel(6, new GigaCounter());
+        Model model = new JMModel(5, new GigaCounter());
+        // model = MixModel.standard(model, new CacheModel());
+        // model.setDynamic(true);
+
         CompletionModelRunner modelRunner = new CompletionModelRunner(model, lexerRunner, vocabulary);
         modelRunner.learnDirectory(train);
         modelRunner.setSelfTesting(false);
