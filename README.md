@@ -1,4 +1,4 @@
-# Code Sentence Embedding
+# Code Sentence Embedding - Function-Call Completion
 Code Sentence Embedding (CSE) repository for the paper _Combining Code Embedding and Static Analysis for Function-Call Completion_ submitted at IEEE International Conference on Software Analysis, Evolution and Reengineering (SANER 21).
 
 This repository contains all the necessary artifacts and instructions to replicate the experiments of the paper.
