@@ -6,10 +6,10 @@ from gensim.models.doc2vec import TaggedDocument
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_path', type=str, help='Path to the trained word2vec model.')
+    parser.add_argument('-m', '--model_path', type=str, help='Path to the trained doc2vec model.')
     parser.add_argument('-t', '--train_set', type=str, help='Path to the training set (json format).')
     parser.add_argument('-e', '--test_set', type=str, help='Path to the test set (json format).')
-    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+    # parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
     args = parser.parse_args()
 
     print('Loading doc2vec model ...')
@@ -23,7 +23,7 @@ if __name__ == '__main__':
         test_set = json.load(f)
     test_set = test_set['proposals']
 
-    topk_range = [5, 10]
+    topk_range = [1, 5, 10]
     for k in topk_range:
         test_size = 0
         score = 0
@@ -35,11 +35,11 @@ if __name__ == '__main__':
                     current_method_name = m['name']
                     method_proposals = m['proposals']
 
-                    # Check that Eclipse proposals are not empty otherwise
+                    # check that the static analysis is not empty otherwise
                     # we cannot build a suggestion list
                     if len(method_proposals) > 0:
                         inferred_vector = model.infer_vector(context)
-                        sims_topn = model.docvecs.most_similar([inferred_vector], topn=1000)
+                        sims_topn = model.docvecs.most_similar([inferred_vector], topn=100)
                         sims_topn_index = list(map(lambda x: x[0], sims_topn))
 
                         suggestions = []
@@ -52,9 +52,8 @@ if __name__ == '__main__':
                             score += 1
                             sum_reciprocal_rank += 1 / (suggestions.index(current_method_name) + 1)
                         test_size += 1
+										# add the current call to the context for the next prediction
                     context.append(current_method_name)
-        print('Precision@{} : {}'.format(k, score / test_size))
+        print('Recall@{} : {}'.format(k, score / test_size))
         print('MRR@{} : {}'.format(k, sum_reciprocal_rank / test_size))
         print('Test size : {}'.format(test_size))
-
-

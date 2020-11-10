@@ -53,7 +53,7 @@ public class JavaFunctionPredictionRunner {
             System.out.printf("Evaluated %d samples, average MRR:\t%.4f\n", mrrs.getCount(), mrrs.getAverage());
 
             DoubleSummaryStatistics recalls = modelRunner.getCompletionRecall(completions);
-            System.out.printf("Evaluated %d samples, Recall@%d MRR:\t%.4f\n",
+            System.out.printf("Evaluated %d samples, Recall@%d:\t%.4f\n",
                     recalls.getCount(), modelRunner.COMPLETION_CUTOFF, recalls.getAverage());
         } catch (IOException e) {
             e.printStackTrace();
